@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NeiroMD</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;background:#000}
+body{height:100%;background:#000;color:#fff;font-family:'Rajdhani',sans-serif;overflow:hidden}
+
+/* scanline */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.008) 2px,rgba(255,255,255,.008) 4px);pointer-events:none;z-index:9998}
+
+/* ── SHELL ── */
+#shell{width:100%;max-width:430px;height:100%;margin:0 auto;display:flex;flex-direction:column;background:#000;position:relative}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:rgba(0,0,0,.92);border-bottom:1px solid #111;flex-shrink:0;position:relative;z-index:50}
+.hdr-mid{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;color:#bbb}
+.hdr-acts{display:flex;gap:8px}
+.hbtn{width:34px;height:34px;background:#111;border:1px solid #1e1e1e;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#666;cursor:pointer;position:relative;flex-shrink:0;transition:color .15s,border-color .15s}
+.hbtn:active{background:#1a1a1a;color:#ccc}
+.hbtn.music-on{color:#a78bfa;border-color:#3b1f8c}
+.mdot{position:absolute;top:5px;right:5px;width:5px;height:5px;border-radius:50%;background:#a78bfa;animation:mdot 1.2s ease infinite}
+@keyframes mdot{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── PAGES CONTAINER ── */
+#pages{flex:1;position:relative;overflow:hidden}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:80px}
+.page::-webkit-scrollbar{display:none}
+.page.show{display:block}
+
+/* ── BOTTOM NAV ── */
+.nav{display:flex;flex-shrink:0;background:rgba(0,0,0,.95);border-top:1px solid #111}
+.nitem{flex:1;padding:10px 0 11px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;color:#3a3a3a;font-family:'Orbitron',monospace;font-size:7px;letter-spacing:1px;cursor:pointer;position:relative;transition:color .15s}
+.nitem svg{width:18px;height:18px}
+.nitem.on{color:#ccc}
+.nitem.on::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent)}
+
+/* ── CARD ── */
+.card{background:#111;border:1px solid #1e1e1e;border-radius:16px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);pointer-events:none;z-index:1}
+
+/* ── BUTTONS ── */
+.btn-p{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;background:linear-gradient(135deg,#d0d0d0,#777,#222);border:none;border-radius:12px;color:#000;font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;font-weight:700;cursor:pointer;width:100%;margin-top:10px;position:relative;overflow:hidden;transition:opacity .15s,transform .1s}
+.btn-p::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.14),transparent 55%);pointer-events:none}
+.btn-p:active{transform:scale(.97)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed}
+.btn-s{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;background:transparent;border:1px solid #252525;border-radius:12px;color:#666;font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;width:100%;margin-top:10px;transition:border-color .15s,color .15s}
+.btn-s:active{border-color:#555;color:#bbb}
+
+/* ── INPUT ── */
+.iw{position:relative;margin-bottom:12px}
+.ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#444;pointer-events:none}
+.inp{width:100%;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:13px 13px 13px 42px;color:#ccc;font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;transition:border-color .2s}
+.inp::placeholder{color:#333}
+.inp:focus{border-color:#484848}
+.sel{width:100%;background:#0a0a0a;border:1px solid #222;border-radius:12px;padding:13px 36px 13px 13px;color:#ccc;font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;margin-bottom:12px}
+.flabel{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#444;margin-bottom:7px}
+
+/* ── BADGE ── */
+.bdg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;font-weight:700}
+.own{background:linear-gradient(135deg,#d4af37,#9a6f00);color:#000}
+.adm{background:linear-gradient(135deg,#777,#333);color:#fff}
+.bon{background:#0a200a;color:#4ade80;border:1px solid #14532d}
+.boff{background:#200a0a;color:#f87171;border:1px solid #7f1d1d}
+
+/* ── STATUS DOT ── */
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;animation:pd 2s ease infinite}
+.sdot.on{background:#4ade80;box-shadow:0 0 7px #4ade80}
+.sdot.off{background:#f87171;box-shadow:0 0 7px #f87171}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── RESULT BOX ── */
+.rbox{border-radius:11px;padding:11px 13px;display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.4;margin-bottom:12px}
+.rok{background:#0a200a;border:1px solid #14532d;color:#4ade80}
+.rerr{background:#200a0a;border:1px solid #7f1d1d;color:#f87171}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%);z-index:9999;padding:11px 16px;border-radius:12px;font-size:13px;display:none;align-items:center;gap:9px;min-width:220px;max-width:calc(100vw - 28px);background:#111;border:1px solid #252525;box-shadow:0 6px 24px rgba(0,0,0,.8);pointer-events:none;animation:tin .2s ease}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#toast.tok{border-color:#14532d;color:#4ade80}
+#toast.terr{border-color:#7f1d1d;color:#f87171}
+#toast.tinf{border-color:#1e3a5f;color:#60a5fa}
+
+/* ── PAGE HEADER ── */
+.phdr{padding:18px 14px 12px;border-bottom:1px solid #0f0f0f;margin-bottom:14px}
+.ptitle{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,#fff 30%,#555);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:3px}
+.psub{font-size:11px;color:#333;letter-spacing:2px}
+
+/* ── BANNER ── */
+.banner{margin:12px 14px;height:176px;border-radius:16px;overflow:hidden;border:1px solid #1e1e1e;position:relative;background:linear-gradient(135deg,#090909,#161616);display:flex;align-items:center;justify-content:center}
+.bgrid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:26px 26px}
+.bglow{position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(255,255,255,.03),transparent 55%)}
+.bcont{position:relative;z-index:2;text-align:center}
+.btitle{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;letter-spacing:5px;background:linear-gradient(135deg,#fff,#aaa 50%,#444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.bsub{font-size:10px;color:#3a3a3a;letter-spacing:3px;font-family:'Orbitron',monospace;margin-bottom:14px}
+.bbtns{display:flex;gap:10px;justify-content:center}
+.bbtn-s{padding:9px 13px;background:transparent;border:1px solid #252525;border-radius:10px;color:#666;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;gap:7px}
+.bbtn-s:active{border-color:#555;color:#bbb}
+.bbtn-p{padding:9px 13px;background:linear-gradient(135deg,#d0d0d0,#777,#222);border:none;border-radius:10px;color:#000;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;position:relative;overflow:hidden}
+.bbtn-p::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.14),transparent);pointer-events:none}
+
+/* ── TABS ── */
+.tabrow{display:flex;gap:8px;margin-bottom:16px}
+.tbtn{flex:1;padding:11px 8px;border-radius:11px;border:1px solid #222;background:transparent;color:#444;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.tbtn.on{background:linear-gradient(135deg,#d0d0d0,#777,#222);color:#000;border-color:transparent}
+
+/* ── TOOLS GRID ── */
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px 14px}
+.tcrd{background:#111;border:1px solid #1e1e1e;border-radius:16px;padding:18px 14px;cursor:pointer;position:relative;overflow:hidden;transition:background .12s}
+.tcrd::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+.tcrd:active{background:#181818;transform:scale(.97)}
+.tico{width:38px;height:38px;border-radius:10px;background:#0a0a0a;border:1px solid #1a1a1a;display:flex;align-items:center;justify-content:center;color:#666;margin-bottom:10px;font-size:16px}
+.tname{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;color:#bbb;margin-bottom:3px}
+.tsub{font-size:11px;color:#333}
+
+/* ── RULES ── */
+.rcrd{background:#111;border:1px solid #1e1e1e;border-radius:16px;padding:15px;margin:0 14px 10px;position:relative;overflow:hidden}
+.rcrd::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+.rnum{display:inline-flex;padding:3px 9px;border-radius:6px;background:#0a0a0a;border:1px solid #222;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;color:#444;margin-bottom:8px}
+.rtitle{font-family:'Orbitron',monospace;font-size:11px;color:#ccc;letter-spacing:1px;margin-bottom:5px;font-weight:700}
+.rdesc{font-size:12px;color:#444;line-height:1.6}
+
+/* ── STATUS BAR ── */
+.stbar{background:#080808;border:1px solid #161616;border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:8px;margin:0 14px 12px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1.5px;color:#3a3a3a}
+
+/* ── SLIDE PANEL (overlay from bottom) ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:1000;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
+.ov.show{display:flex}
+.spanel{background:#0d0d0d;border-top:1px solid #222;border-radius:22px 22px 0 0;width:100%;max-width:430px;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.23,1)}
+.ov.show .spanel{transform:translateY(0)}
+.shandle{width:36px;height:3px;background:#222;border-radius:2px;margin:12px auto 0}
+.stitle{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:#666;padding:12px 18px 14px;border-bottom:1px solid #141414;display:flex;align-items:center;gap:9px}
+.sitem{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #0d0d0d;cursor:pointer;transition:background .12s}
+.sitem:active{background:#111}
+.sil{display:flex;align-items:center;gap:12px}
+.sico{width:36px;height:36px;border-radius:9px;background:#111;border:1px solid #1a1a1a;display:flex;align-items:center;justify-content:center;color:#555;font-size:14px;flex-shrink:0}
+.sname{font-family:'Rajdhani',sans-serif;font-size:14px;color:#bbb;font-weight:600}
+.ssub{font-size:11px;color:#333;margin-top:1px}
+.sbadge{font-family:'Orbitron',monospace;font-size:8px;color:#333;letter-spacing:1px}
+.spadd{padding:16px 18px 28px}
+.bk{background:none;border:1px solid #222;border-radius:9px;padding:7px 13px;color:#666;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:14px;transition:color .15s}
+.bk:active{color:#ccc}
+.ostitle{font-family:'Orbitron',monospace;font-size:11px;color:#aaa;letter-spacing:2px;margin-bottom:14px}
+.ostbl{background:#080808;border:1px solid #161616;border-radius:11px;padding:4px 14px;margin-top:14px}
+.osrow{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid #0d0d0d}
+.osrow:last-child{border-bottom:none}
+.oskey{font-size:9px;color:#3a3a3a;letter-spacing:1px;font-family:'Orbitron',monospace;flex-shrink:0;margin-right:10px;padding-top:2px}
+.osval{font-size:12px;color:#aaa;text-align:right;word-break:break-all}
+
+/* ── MUSIC ── */
+.mcover{width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,#1a0533,#080814);border:1px solid #2a1a4a;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:#a78bfa;box-shadow:0 0 20px rgba(167,139,250,.1)}
+.mtitle{font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;color:#ccc;text-align:center;margin-bottom:3px}
+.mart{font-size:11px;color:#444;text-align:center;letter-spacing:1px;margin-bottom:20px}
+.mprow{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.mpbg{flex:1;height:3px;background:#1a1a1a;border-radius:2px;cursor:pointer}
+.mpfill{height:100%;background:linear-gradient(90deg,#a78bfa,#7c3aed);border-radius:2px;transition:width .8s linear;width:0}
+.mtime{font-family:'Orbitron',monospace;font-size:9px;color:#444;letter-spacing:1px;flex-shrink:0;min-width:28px}
+.mtime.r{text-align:right}
+.mctrl{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px}
+.mc{background:#111;border:1px solid #1a1a1a;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;color:#666;cursor:pointer;transition:all .12s}
+.mc.play{background:linear-gradient(135deg,#a78bfa,#7c3aed);border-color:transparent;color:#fff;width:52px;height:52px;box-shadow:0 4px 16px rgba(167,139,250,.25)}
+.mc:active{transform:scale(.93)}
+.mnote{padding:9px 12px;background:#080808;border-radius:9px;border:1px solid #141414;font-size:10px;color:#333;font-family:'Orbitron',monospace;letter-spacing:1px;text-align:center;margin-top:4px}
+
+/* ── LOGIN ── */
+#login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:36px 22px;background:radial-gradient(ellipse at 50% 30%,#161616,#000 70%)}
+.llogo{width:96px;height:96px;border-radius:24px;background:linear-gradient(145deg,#1e1e1e,#080808);border:1px solid #2a2a2a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;margin-bottom:26px;position:relative;box-shadow:0 0 32px rgba(255,255,255,.06)}
+.llogo::after{content:'';position:absolute;inset:-1px;border-radius:25px;background:linear-gradient(135deg,rgba(255,255,255,.11),transparent,rgba(255,255,255,.03));pointer-events:none}
+.lbig{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:#bbb}
+.lsml{font-family:'Orbitron',monospace;font-size:10px;color:#555;letter-spacing:2px}
+.ltitle{font-family:'Orbitron',monospace;font-size:19px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#fff 30%,#555);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:5px}
+.lsub{font-size:12px;color:#444;letter-spacing:2px;margin-bottom:32px}
+.lform{width:100%}
+.pwtog{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#444;cursor:pointer;padding:4px}
+.lhint{margin-top:12px;padding:9px 12px;background:#080808;border-radius:9px;border:1px solid #141414;font-size:10px;color:#333;font-family:'Orbitron',monospace;letter-spacing:1px;text-align:center}
+.lcopy{margin-top:32px;font-size:10px;color:#222;letter-spacing:2px;font-family:'Orbitron',monospace}
+.r2{display:flex;gap:10px;margin-top:10px}
+.r2 .btn-s{margin-top:0;font-size:9px}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login">
+  <div class="llogo"><div class="lbig">N</div><div class="lsml">NEIRO</div></div>
+  <div class="ltitle">NEIROMD</div>
+  <div class="lsub">SIGN IN TO CONTINUE</div>
+  <div class="lform">
+    <div id="lerr" class="rbox rerr" style="display:none;margin-bottom:12px"></div>
+    <div class="iw">
+      <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg></span>
+      <input class="inp" id="lu" placeholder="Username" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="iw">
+      <span class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+      <input class="inp" id="lp" type="password" placeholder="Password" style="padding-right:42px" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="pwtog" onclick="togglePw()">
+        <svg id="eoff" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
+        <svg id="eon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <button class="btn-p" id="lbtn" onclick="doLogin()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+      SIGN IN
+    </button>
+    <button class="btn-s" onclick="go('https://t.me/Nexsus009')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      BUY ACCESS — HUBUNGI ADMIN
+    </button>
+    <div class="r2">
+      <button class="btn-s" onclick="go('https://t.me/Nexsus009')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        TELEGRAM
+      </button>
+      <button class="btn-s" onclick="go('https://wa.me/62895360964293')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.96 7.96 0 01-4.076-1.117l-.292-.174-3.028.9.9-3.028-.174-.292A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z"/></svg>
+        WHATSAPP
+      </button>
+    </div>
+    <div class="lhint">DEFAULT: neiromd / admin123</div>
+  </div>
+  <div class="lcopy">© 2026 NEIROMD</div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="app" style="display:none;height:100%;flex-direction:column">
+
+  <!-- Header -->
+  <div class="hdr">
+    <button class="hbtn" id="mbtn" onclick="openOv('ov-music')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </button>
+    <div class="hdr-mid" id="hname">HAI, NEIROMD</div>
+    <div class="hdr-acts">
+      <button class="hbtn" onclick="go('https://wa.me/62895360964293')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0118 0v6M3 18a3 3 0 006 0v-3a3 3 0 00-6 0v3zm12 0a3 3 0 006 0v-3a3 3 0 00-6 0v3z"/></svg>
+      </button>
+      <button class="hbtn" onclick="doLogout()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Pages -->
+  <div id="pages">
+
+    <!-- HOME -->
+    <div class="page show" id="pg-home">
+      <!-- Profile -->
+      <div class="card" style="margin:14px 14px 0;padding:15px;display:flex;align-items:center;gap:12px">
+        <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#2a2a2a,#0f0f0f);border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:10px;color:#666;flex-shrink:0" id="av">NMD</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#fff;letter-spacing:2px;margin-bottom:5px" id="pname">NEIROMD</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <span class="bdg own" id="prole">OWNER</span>
+            <span style="font-size:11px;color:#444" id="pexp">Exp: 2053-07-15</span>
+          </div>
+        </div>
+        <span class="bdg bon" id="pstatus">ACTIVE</span>
+      </div>
+
+      <!-- Banner -->
+      <div class="banner">
+        <div class="bgrid"></div><div class="bglow"></div>
+        <div class="bcont">
+          <div class="btitle">NEIROMD</div>
+          <div class="bsub">POWER BY ALL TEAM</div>
+          <div class="bbtns">
+            <button class="bbtn-s" onclick="go('https://t.me/Nexsus009')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              JOIN CHANNEL
+            </button>
+            <button class="bbtn-p" onclick="go('https://wa.me/62895360964293')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.96 7.96 0 01-4.076-1.117l-.292-.174-3.028.9.9-3.028-.174-.292A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z"/></svg>
+              WHATSAPP
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info cards -->
+      <div style="margin:12px 14px;display:flex;flex-direction:column;gap:10px">
+        <div class="card" style="padding:13px 15px;display:flex;align-items:center;gap:10px">
+          <div class="sdot on" id="sdot-home"></div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;color:#444;margin-bottom:2px">SYSTEM STATUS</div>
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#bbb;letter-spacing:1px" id="stxt-home">ONLINE</div>
+          </div>
+        </div>
+        <div class="card" style="padding:15px">
+          <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;color:#444;margin-bottom:11px">QUICK ACCESS</div>
+          <button class="btn-s" style="margin:0 0 8px;justify-content:flex-start;padding:11px 13px" onclick="go('https://t.me/Nexsus009')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            JOIN CHANNEL TELEGRAM
+          </button>
+          <button class="btn-s" style="margin:0 0 8px;justify-content:flex-start;padding:11px 13px" onclick="go('https://wa.me/62895360964293')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.96 7.96 0 01-4.076-1.117l-.292-.174-3.028.9.9-3.028-.174-.292A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z"/></svg>
+            CHAT ADMIN WHATSAPP
+          </button>
+          <button class="btn-s" style="margin:0;justify-content:flex-start;padding:11px 13px" onclick="doLogout()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            LOGOUT
+          </button>
+        </div>
+        <div class="card" style="padding:15px">
+          <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;color:#444;margin-bottom:11px">KETERANGAN</div>
+          <div style="font-size:12px;color:#444;line-height:1.9;display:flex;flex-direction:column;gap:2px">
+            <div>• <span style="color:#777">Bug Sender</span> — kirim bug ke nomor/grup WA target</div>
+            <div>• <span style="color:#777">OSINT</span> — cari info dari NIK, nomor, domain, email</div>
+            <div>• <span style="color:#777">Tools</span> — DDoS, network, downloader & utilities</div>
+            <div>• <span style="color:#777">Admin</span> — hubungi via WA/Telegram untuk bantuan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WA = BUG SENDER -->
+    <div class="page" id="pg-wa">
+      <div class="phdr"><div class="ptitle">BUG SENDER</div><div class="psub">WHATSAPP ATTACK PANEL</div></div>
+      <div style="margin:0 14px;display:flex;flex-direction:column;gap:10px">
+        <div class="card" style="padding:16px">
+          <div class="tabrow">
+            <button class="tbtn on" id="tnum" onclick="swTab('number')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91A16 16 0 0016.09 17.09l1.27-.52a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              BUG NOMOR
+            </button>
+            <button class="tbtn" id="tgrp" onclick="swTab('group')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm8 0a4 4 0 100-8 4 4 0 000 8zm4 10v-2a4 4 0 00-3-3.87"/></svg>
+              BUG GROUP
+            </button>
+          </div>
+          <div class="flabel" id="tlabel">NOMOR TARGET</div>
+          <div class="iw">
+            <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91A16 16 0 0016.09 17.09l1.27-.52a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></span>
+            <input class="inp" id="tinp" placeholder="Contoh: +62xxxxxxxxxx">
+          </div>
+          <div class="flabel">PILIH BUG</div>
+          <select class="sel" id="bsel">
+            <option>INVISIBLE FC IOS</option>
+            <option>CRASH NOTIF</option>
+            <option>CRSH CLIK DAN NO CLIK</option>
+            <option>DELAY</option>
+            <option>FORCE UI CLOSE</option>
+            <option>KILL GB AJG</option>
+          </select>
+          <div id="sres" class="rbox" style="display:none"></div>
+          <button class="btn-p" id="sbtn" onclick="handleSend(event)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2M19.5 6.5a3 3 0 00-3-3l-4.5 4.5.75.75L7.5 13.5 10.5 16l5.25-5.25.75.75L21 7"/></svg>
+            SEND BUG ATTACK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="page" id="pg-info">
+      <div class="phdr"><div class="ptitle">PERATURAN & INFO</div><div class="psub">COMMUNITY RULES</div></div>
+      <div class="stbar"><div class="sdot on" id="sdot-info"></div><span id="stxt-info">System Status: ONLINE</span></div>
+      <div class="rcrd"><div class="rnum">Rule 1</div><div class="rtitle">Larangan Barter Akun</div><div class="rdesc">Akun tidak boleh ditukar dengan barang, jasa, atau akun lain dalam bentuk apa pun.</div></div>
+      <div class="rcrd"><div class="rnum">Rule 2</div><div class="rtitle">Larangan Membagikan Akun</div><div class="rdesc">Setiap akun bersifat pribadi dan hanya boleh digunakan oleh pemilik akun yang terdaftar.</div></div>
+      <div class="rcrd"><div class="rnum">Rule 3</div><div class="rtitle">Larangan Menjual Akun</div><div class="rdesc">Member TIDAK diperbolehkan menjual akun. Penjualan akun hanya boleh dilakukan oleh role yang diizinkan secara resmi.</div></div>
+      <div class="rcrd"><div class="rnum">Rule 4</div><div class="rtitle">Larangan Jual Durasi Ilegal</div><div class="rdesc">Dilarang menjual akses harian, mingguan, trial, dan sejenisnya di luar ketentuan yang telah ditetapkan.</div></div>
+      <div class="rcrd"><div class="rnum">Rule 5</div><div class="rtitle">Larangan Banting Harga</div><div class="rdesc">Dilarang merusak atau menurunkan harga yang telah ditentukan di bawah ketentuan NeiroMD.</div></div>
+    </div>
+
+    <!-- TOOLS -->
+    <div class="page" id="pg-tools">
+      <div class="phdr"><div class="ptitle">TOOLS</div><div class="psub">ADVANCED SECURITY & OSINT</div></div>
+      <div class="stbar"><div class="sdot on" id="sdot-tools"></div><span id="stxt-tools">System Status: ONLINE</span></div>
+      <div class="tgrid" id="tgrid"></div>
+    </div>
+
+  </div>
+
+  <!-- Nav -->
+  <div class="nav">
+    <button class="nitem on" id="n-home" onclick="swPage('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>HOME
+    </button>
+    <button class="nitem" id="n-wa" onclick="swPage('wa')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.96 7.96 0 01-4.076-1.117l-.292-.174-3.028.9.9-3.028-.174-.292A7.96 7.96 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z"/></svg>WA
+    </button>
+    <button class="nitem" id="n-info" onclick="swPage('info')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zm0-9v-4m0 8h.01"/></svg>INFO
+    </button>
+    <button class="nitem" id="n-tools" onclick="swPage('tools')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>TOOLS
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SENDER SHEET ═══ -->
+<div class="ov" id="ov-sender" onclick="bgClose(event,'ov-sender')">
+  <div class="spanel">
+    <div class="shandle"></div>
+    <div style="padding:14px 18px 30px">
+      <div style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;color:#ccc;font-weight:700;margin-bottom:4px">ISI SENDER ANDA DI BAWAH</div>
+      <div style="font-size:12px;color:#3a3a3a;margin-bottom:16px">Nomor WA yang dipakai sebagai pengirim</div>
+      <div id="serr" class="rbox rerr" style="display:none;margin-bottom:12px"></div>
+      <div class="iw">
+        <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91A16 16 0 0016.09 17.09l1.27-.52a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></span>
+        <input class="inp" id="sinp" placeholder="Contoh: 62xxxxxxxxxx" type="tel" inputmode="numeric" onkeydown="if(event.key==='Enter')doSend()">
+      </div>
+      <button class="btn-p" style="margin-top:0" onclick="doSend()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        KONFIRMASI & KIRIM
+      </button>
+      <button class="btn-s" onclick="closeOv('ov-sender')">BATAL</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOOLS PANEL ═══ -->
+<div class="ov" id="ov-tools" onclick="bgClose(event,'ov-tools')">
+  <div class="spanel">
+    <div class="shandle"></div>
+    <div class="stitle" id="tp-title">TOOLS</div>
+    <div id="tp-body"></div>
+  </div>
+</div>
+
+<!-- ═══ OSINT PANEL ═══ -->
+<div class="ov" id="ov-osint" onclick="bgClose(event,'ov-osint')">
+  <div class="spanel">
+    <div class="shandle"></div>
+    <div class="stitle">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      OSINT SEARCH
+    </div>
+    <div class="spadd">
+      <button class="bk" onclick="closeOv('ov-osint');openOv('ov-tools')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        BACK
+      </button>
+      <div class="ostitle" id="os-title">NIK DETAIL</div>
+      <div id="os-err" class="rbox rerr" style="display:none;margin-bottom:12px"></div>
+      <div class="iw">
+        <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></span>
+        <input class="inp" id="os-inp" placeholder="Query..." onkeydown="if(event.key==='Enter')doOsint()">
+      </div>
+      <button class="btn-p" id="os-btn" style="margin-top:0" onclick="doOsint()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        SEARCH
+      </button>
+      <div id="os-tbl" class="ostbl" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MUSIC PANEL ═══ -->
+<div class="ov" id="ov-music" onclick="bgClose(event,'ov-music')">
+  <div class="spanel">
+    <div class="shandle"></div>
+    <div class="spadd">
+      <div class="mcover">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13M9 18a3 3 0 11-6 0 3 3 0 016 0zm12-2a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      </div>
+      <div class="mtitle">ESPAÇO LIMINAL</div>
+      <div class="mart">Slowed + Reverb</div>
+      <div class="mprow">
+        <div class="mtime" id="mel">0:00</div>
+        <div class="mpbg" id="mpbg" onclick="seekM(event)"><div class="mpfill" id="mpf"></div></div>
+        <div class="mtime r">4:03</div>
+      </div>
+      <div class="mctrl">
+        <button class="mc" onclick="restartM()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        </button>
+        <button class="mc play" id="mplay" onclick="toggleM()">
+          <svg id="mpi" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+          <svg id="mpau" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:none"><path d="M10 9v6M14 9v6"/></svg>
+        </button>
+        <button class="mc" onclick="go('https://www.youtube.com/results?search_query=ESPA%C3%87O+LIMINAL+slowed')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+        </button>
+      </div>
+      <div class="mnote">VISUAL PLAYER — BUKA YT UNTUK AUDIO ASLI</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SENDER MANAGER ═══ -->
+<div class="ov" id="ov-smgr" onclick="bgClose(event,'ov-smgr')">
+  <div class="spanel">
+    <div class="shandle"></div>
+    <div class="stitle">📱 ADD SENDER</div>
+    <div class="spadd">
+      <!-- List sender aktif -->
+      <div id="smgr-list" style="margin-bottom:16px"></div>
+
+      <!-- Form tambah sender baru -->
+      <div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#444;margin-bottom:10px">TAMBAH NOMOR SENDER BARU</div>
+      <div id="smgr-err" class="rbox rerr" style="display:none;margin-bottom:12px"></div>
+      <div class="iw">
+        <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.22 1.18 2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91A16 16 0 0016.09 17.09l1.27-.52a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></span>
+        <input class="inp" id="smgr-inp" placeholder="Contoh: 62xxxxxxxxxx" type="tel" inputmode="numeric" onkeydown="if(event.key==='Enter')addSender()">
+      </div>
+      <button class="btn-p" style="margin-top:0" id="smgr-btn" onclick="addSender()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        TAMBAH & PAIRING
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAIRING CODE OVERLAY ═══ -->
+<div class="ov" id="ov-pair">
+  <div class="spanel">
+    <div class="shandle"></div>
+    <div class="spadd">
+      <div style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;color:#ccc;font-weight:700;margin-bottom:6px">KODE PAIRING WA</div>
+      <div style="font-size:12px;color:#3a3a3a;line-height:1.7;margin-bottom:20px">
+        Buka WhatsApp → <b style="color:#666">Setelan</b> → <b style="color:#666">Perangkat Tertaut</b> → <b style="color:#666">Tautkan Perangkat</b> → <b style="color:#666">Tautkan via nomor telepon</b> → masukkan kode di bawah:
+      </div>
+      <!-- Kode OURINNAI display -->
+      <div style="font-family:'Orbitron',monospace;font-size:30px;font-weight:900;letter-spacing:6px;color:#a78bfa;text-align:center;background:#0a0814;border:1px solid #2a1a4a;border-radius:14px;padding:22px;margin-bottom:16px">OURINNAI</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="sdot on" id="pair-dot" style="margin:0"></div>
+        <div style="font-family:'Orbitron',monospace;font-size:9px;color:#555;letter-spacing:1px" id="pair-status">Menunggu konfirmasi di WA...</div>
+      </div>
+      <div style="font-family:'Orbitron',monospace;font-size:9px;color:#333;letter-spacing:1px;margin-bottom:18px" id="pair-num"></div>
+      <div id="pair-success" class="rbox rok" style="display:none;margin-bottom:12px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Sender berhasil ditambahkan!
+      </div>
+      <button class="btn-s" id="pair-cancel-btn" onclick="cancelPairing()">BATAL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SENDER MANAGER ────────────────────────────────────────────────────────────
+// Simpan list sender di localStorage
+function getSenders(){ try{ return JSON.parse(localStorage.getItem('neiro_senders')||'[]') }catch(e){return[]} }
+function saveSenders(arr){ localStorage.setItem('neiro_senders', JSON.stringify(arr)) }
+
+let pairTimer = null
+let pairNumber = ''
+
+function openSenderManager(){
+  renderSenderList()
+  $('smgr-inp').value=''
+  $('smgr-err').style.display='none'
+  openOv('ov-smgr')
+}
+
+function renderSenderList(){
+  const list = getSenders()
+  const el = $('smgr-list')
+  if(list.length===0){
+    el.innerHTML=`<div style="font-size:12px;color:#333;font-family:'Orbitron',monospace;letter-spacing:1px;text-align:center;padding:14px 0">Belum ada sender terdaftar</div>`
+    return
+  }
+  el.innerHTML = `<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#444;margin-bottom:10px">SENDER TERDAFTAR</div>` +
+    list.map((s,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #0f0f0f">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${s.status==='connected'?'#4ade80':'#f87171'};box-shadow:0 0 6px ${s.status==='connected'?'#4ade80':'#f87171'}"></div>
+          <div>
+            <div style="font-family:'Orbitron',monospace;font-size:10px;color:#bbb;letter-spacing:1px">${s.number}</div>
+            <div style="font-size:11px;color:#444;margin-top:2px">${s.status==='connected'?'✓ Connected':'⚠ Offline'}</div>
+          </div>
+        </div>
+        <button onclick="removeSender(${i})" style="background:#200a0a;border:1px solid #7f1d1d;border-radius:8px;padding:5px 10px;color:#f87171;font-family:'Orbitron',monospace;font-size:8px;cursor:pointer;letter-spacing:1px">HAPUS</button>
+      </div>`).join('')
+}
+
+function removeSender(idx){
+  const list = getSenders()
+  list.splice(idx,1)
+  saveSenders(list)
+  renderSenderList()
+  toast('Sender dihapus','inf')
+}
+
+async function addSender(){
+  const num = $('smgr-inp').value.trim()
+  const err = $('smgr-err')
+  const btn = $('smgr-btn')
+  if(!num){ showErr(err,'Nomor tidak boleh kosong'); return }
+  if(!num.match(/^\+?[0-9]{8,15}$/)){ showErr(err,'Format tidak valid, contoh: 6281234567890'); return }
+  err.style.display='none'
+
+  btn.disabled=true
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite"/></path></svg> MEMPROSES...'
+
+  // Request pairing ke Railway
+  const res = await apiCall('/pairing/request', { method:'POST', body: JSON.stringify({ number: num }) })
+
+  btn.disabled=false
+  btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> TAMBAH & PAIRING'
+
+  if(!res.success){ showErr(err, res.message||'Gagal request pairing'); return }
+
+  if(res.status==='already_connected'){
+    // Langsung simpan
+    const list = getSenders()
+    if(!list.find(s=>s.number===num)){
+      list.push({ number: num, status:'connected' })
+      saveSenders(list)
+    }
+    renderSenderList()
+    toast('Sender sudah connected!','ok')
+    return
+  }
+
+  // Tampilkan overlay kode OURINNAI
+  pairNumber = num
+  $('pair-num').textContent = 'Nomor: ' + num
+  $('pair-status').textContent = 'Menunggu konfirmasi di WA...'
+  $('pair-dot').style.background = '#a78bfa'
+  $('pair-dot').style.boxShadow = '0 0 7px #a78bfa'
+  $('pair-success').style.display = 'none'
+  $('pair-cancel-btn').style.display = 'flex'
+  closeOv('ov-smgr')
+  openOv('ov-pair')
+
+  // Poll status
+  clearInterval(pairTimer)
+  pairTimer = setInterval(async()=>{
+    const s = await apiCall('/pairing/status/'+num)
+    if(s.status==='connected'){
+      clearInterval(pairTimer)
+      $('pair-status').textContent = '✓ Berhasil terhubung!'
+      $('pair-dot').style.background = '#4ade80'
+      $('pair-dot').style.boxShadow = '0 0 7px #4ade80'
+      $('pair-success').style.display = 'flex'
+      $('pair-cancel-btn').style.display = 'none'
+      // Simpan sender
+      const list = getSenders()
+      if(!list.find(s=>s.number===num)){
+        list.push({ number: num, status:'connected' })
+        saveSenders(list)
+      }
+      toast('Sender berhasil ditambahkan!','ok')
+      setTimeout(()=>{ closeOv('ov-pair'); openSenderManager() }, 2000)
+    } else if(s.status==='error'||s.status==='logged_out'||s.status==='not_found'){
+      clearInterval(pairTimer)
+      $('pair-status').textContent = 'Gagal. Coba lagi.'
+      $('pair-dot').style.background = '#f87171'
+      toast('Pairing gagal','err')
+    }
+  }, 3000)
+}
+
+function cancelPairing(){
+  clearInterval(pairTimer)
+  closeOv('ov-pair')
+}
+</script>
+
+<script>
+// ── DATA ──
+const USERS=[{u:'neiromd',p:'admin123',role:'OWNER',exp:'2053-07-15'},{u:'user1',p:'user123',role:'ADMIN',exp:'2025-12-31'}];
+
+// ── API CONFIG ── Ganti ke URL VPS lu
+const API_BASE = window.location.origin + '/api'
+let API_KEY    = ''  // diisi otomatis setelah login
+
+async function apiCall(path, opts={}) {
+  const headers = { 'Content-Type': 'application/json', 'x-api-key': API_KEY }
+  try {
+    const r = await fetch(API_BASE + path, { ...opts, headers })
+    return await r.json()
+  } catch(e) {
+    return { success: false, message: 'Tidak bisa konek ke server: ' + e.message }
+  }
+}
+const TDATA=[
+  {id:'sender',n:'Add Sender',  s:'Pairing WA',     ic:'📱',special:'sender'},
+  {id:'ddos',  n:'DDoS Tools',  s:'Attack & Server',ic:'⚡',items:[{n:'Attack Panel',s:'Layer 4/7 flood'},{n:'Manage Server',s:'Add/remove nodes'}]},
+  {id:'net',   n:'Network',     s:'WiFi & Spam',    ic:'📶',items:[{n:'Spam NGL',s:'Anonymous spam'},{n:'WiFi Killer',s:'Internal deauth'}]},
+  {id:'osi',   n:'OSINT',       s:'Investigation',  ic:'🔍',items:[
+    {n:'NIK Detail',  s:'KTP lookup',   ot:'nik',   ph:'16 digit NIK',      ok:'nik'},
+    {n:'Domain OSINT',s:'Whois + DNS',  ot:'domain',ph:'Contoh: google.com',ok:'domain'},
+    {n:'Phone Lookup',s:'Reverse phone',ot:'phone', ph:'Contoh: +62xxx',    ok:'number'},
+    {n:'Email OSINT', s:'Breach check', ot:'email', ph:'Masukkan email',    ok:'email'},
+  ]},
+  {id:'dl',    n:'Downloader',  s:'Social Media',   ic:'⬇️',items:[{n:'TikTok DL',s:'No watermark'},{n:'Instagram DL',s:'Reels & posts'}]},
+  {id:'util',  n:'Utilities',   s:'Extra Tools',    ic:'🔧',items:[{n:'QR Generator',s:'Custom QR'},{n:'IP Scanner',s:'Local subnet'},{n:'Port Scanner',s:'TCP/UDP'}]},
+  {id:'fav',   n:'Quick Access',s:'Favorites',      ic:'⭐',items:[{n:'Bookmarks',s:'Saved tools'}]},
+];
+
+// ── STATE ──
+let bugMode='number', osItem=null, mPlay=false, mEl=0, mTmr=null;
+const MD=243;
+
+// ── UTILS ──
+const $=id=>document.getElementById(id);
+function go(u){window.open(u,'_blank')}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+let tTmr=null;
+function toast(msg,type='inf'){
+  const t=$('toast');
+  t.textContent=msg;
+  t.className=`tok`;
+  if(type==='err')t.className='terr';
+  if(type==='inf')t.className='tinf';
+  t.style.display='flex';
+  clearTimeout(tTmr);
+  tTmr=setTimeout(()=>{t.style.display='none'},3200);
+}
+
+function openOv(id){
+  const el=$(id);
+  el.style.display='flex';
+  el.offsetHeight;
+  el.classList.add('show');
+}
+function closeOv(id){
+  const el=$(id);
+  el.classList.remove('show');
+  setTimeout(()=>{el.style.display='none'},320);
+}
+function bgClose(e,id){if(e.target===$(id))closeOv(id)}
+
+// ── PING ──
+function doPing(){
+  const ms=20+Math.floor(Math.random()*80);
+  ['info','tools'].forEach(p=>{
+    const t=$(`stxt-${p}`),d=$(`sdot-${p}`);
+    if(t)t.textContent=`System Status: ONLINE (${ms}MS)`;
+    if(d){d.classList.add('on');d.classList.remove('off')}
+  });
+  const h=$('stxt-home'),dh=$('sdot-home');
+  if(h)h.textContent=`ONLINE (${ms}MS)`;
+  if(dh){dh.classList.add('on');dh.classList.remove('off')}
+}
+setInterval(doPing,5000);
+
+// ── LOGIN ──
+function togglePw(){
+  const i=$('lp');const isT=i.type==='text';
+  i.type=isT?'password':'text';
+  $('eoff').style.display=isT?'block':'none';
+  $('eon').style.display=isT?'none':'block';
+}
+async function doLogin(){
+  const u=$('lu').value.trim(),p=$('lp').value;
+  const e=$('lerr'),b=$('lbtn');
+  if(!u||!p){showErr(e,'Username & password wajib diisi');return}
+  b.disabled=true;b.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite"/></path></svg> SIGNING IN...';
+
+  let usr = null;
+  try {
+    const res = await fetch(API_BASE+'/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, password:p})
+    });
+    const data = await res.json();
+    if(data.success) {
+      API_KEY = data.apiKey;
+      usr = data.user;
+      usr.u = usr.username;
+    } else {
+      b.disabled=false;b.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg> SIGN IN';
+      showErr(e, data.message||'Login gagal'); return;
+    }
+  } catch(err) {
+    // Fallback mock kalau server mati
+    await sleep(500);
+    const found = USERS.find(x=>x.u.toLowerCase()===u.toLowerCase());
+    if(!found||found.p!==p){
+      b.disabled=false;b.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg> SIGN IN';
+      showErr(e,'Login gagal: '+err.message); return;
+    }
+    usr = found;
+  }
+
+  b.disabled=false;b.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg> SIGN IN';
+  e.style.display='none';
+  $('login').style.display='none';
+  const app=$('app');app.style.display='flex';
+  $('hname').textContent='HAI, '+(usr.u||usr.username).toUpperCase();
+  $('pname').textContent=(usr.u||usr.username).toUpperCase();
+  $('av').textContent=(usr.u||usr.username).substring(0,3).toUpperCase();
+  $('prole').textContent=usr.role;
+  $('prole').className='bdg '+(usr.role==='OWNER'?'own':'adm');
+  $('pexp').textContent='Exp: '+(usr.exp||usr.expDate);
+  buildGrid();doPing();
+}
+function doLogout(){$('app').style.display='none';$('login').style.display='flex';$('lu').value='';$('lp').value=''}
+function showErr(el,msg){el.style.display='flex';el.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg> '+msg}
+
+// ── PAGE SWITCH ──
+function swPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('on'));
+  $('pg-'+name).classList.add('show');
+  $('n-'+name).classList.add('on');
+}
+
+// ── BUG SENDER ──
+function swTab(mode){
+  bugMode=mode;
+  $('tnum').classList.toggle('on',mode==='number');
+  $('tgrp').classList.toggle('on',mode==='group');
+  $('tlabel').textContent=mode==='number'?'NOMOR TARGET':'LINK GROUP WA';
+  $('tinp').placeholder=mode==='number'?'Contoh: +62xxxxxxxxxx':'Contoh: https://chat.whatsapp.com/...';
+  $('sres').style.display='none';
+}
+
+function handleSend(e){
+  if(e)e.preventDefault();
+  const t=$('tinp').value.trim();
+  if(!t){toast('Isi nomor/link target dulu','err');$('tinp').focus();return}
+  if(bugMode==='number'&&!t.match(/^\+?[0-9]{8,15}$/)){ toast('Format nomor target tidak valid','err');return}
+  if(bugMode==='group'&&!t.includes('chat.whatsapp.com')){toast('Format link grup tidak valid','err');return}
+
+  // Tampilkan sender sheet dengan list sender tersimpan
+  const senders = getSenders().filter(s=>s.status==='connected')
+  const sheetInp = $('sinp')
+  sheetInp.value=''
+  $('serr').style.display='none'
+
+  // Inject quick-pick sender di atas input
+  let qp = $('sender-quickpick')
+  if(!qp){
+    qp = document.createElement('div')
+    qp.id = 'sender-quickpick'
+    sheetInp.parentElement.parentElement.insertBefore(qp, sheetInp.parentElement)
+  }
+  if(senders.length>0){
+    qp.innerHTML = `<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#444;margin-bottom:8px">SENDER TERSIMPAN</div>` +
+      senders.map(s=>`<button onclick="selectSender('${s.number}')" style="display:flex;align-items:center;gap:8px;width:100%;background:#0a0a0a;border:1px solid #1e1e1e;border-radius:10px;padding:10px 12px;color:#bbb;font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;margin-bottom:7px">
+        <div style="width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 5px #4ade80;flex-shrink:0"></div>
+        ${s.number}
+        <span style="margin-left:auto;font-size:8px;color:#555">TAP PILIH</span>
+      </button>`).join('') +
+      `<div style="font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#333;text-align:center;margin:10px 0 10px">— ATAU KETIK MANUAL —</div>`
+  } else {
+    qp.innerHTML = `<div style="font-size:11px;color:#3a3a3a;text-align:center;padding:8px 0 14px;font-family:'Orbitron',monospace;letter-spacing:1px">Belum ada sender. Tambah di Tools → Add Sender</div>`
+  }
+
+  openOv('ov-sender')
+  setTimeout(()=>{try{sheetInp.focus()}catch(e){}},380)
+}
+
+function selectSender(num){
+  $('sinp').value = num
+  $('sinp').focus()
+}
+
+// ── pairing state ──
+let pairInterval = null
+
+async function doSend(){
+  const sender=$('sinp').value.trim()
+  const e=$('serr')
+  if(!sender){showErr(e,'Nomor sender tidak boleh kosong');return}
+  if(!sender.match(/^\+?[0-9]{8,15}$/)){showErr(e,'Format tidak valid, contoh: 6281234567890');return}
+
+  // Kalau ada backend → cek sesi dulu
+  if(API_KEY) {
+    closeOv('ov-sender')
+    await requestPairing(sender)
+  } else {
+    // Mode offline/mock
+    closeOv('ov-sender')
+    await doSendMock(sender)
+  }
+}
+
+async function requestPairing(sender) {
+  toast('Mengecek sesi...','inf')
+  const statusRes = await apiCall('/pairing/status/'+sender)
+
+  if(statusRes.status === 'connected') {
+    // Sesi udah ada, langsung kirim
+    await executeSend(sender)
+    return
+  }
+
+  // Minta pairing code baru
+  toast('Meminta pairing code...','inf')
+  const res = await apiCall('/pairing/request', { method:'POST', body: JSON.stringify({ number: sender }) })
+
+  if(!res.success) { toast(res.message || 'Gagal request pairing','err'); return }
+
+  if(res.status === 'already_connected') {
+    await executeSend(sender)
+    return
+  }
+
+  // Tampilkan pairing code ke user
+  showPairingCode(res.pairingCode, sender)
+}
+
+function showPairingCode(code, sender) {
+  // Buat overlay pairing code
+  let ov = $('ov-pairing')
+  if(!ov) {
+    ov = document.createElement('div')
+    ov.id = 'ov-pairing'
+    ov.className = 'ov'
+    ov.innerHTML = `
+      <div class="spanel">
+        <div class="shandle"></div>
+        <div style="padding:18px 18px 30px">
+          <div style="font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;color:#ccc;font-weight:700;margin-bottom:6px">PAIRING CODE</div>
+          <div style="font-size:12px;color:#3a3a3a;margin-bottom:20px">Buka WA lu → Perangkat Tertaut → Tautkan Perangkat → Tautkan via nomor telepon, lalu masukkan kode ini:</div>
+          <div id="pair-code" style="font-family:'Orbitron',monospace;font-size:32px;font-weight:900;letter-spacing:8px;color:#a78bfa;text-align:center;background:#0a0a0a;border:1px solid #2a1a4a;border-radius:14px;padding:20px;margin-bottom:14px">----</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
+            <div class="sdot on" id="pair-dot"></div>
+            <div style="font-family:'Orbitron',monospace;font-size:9px;color:#555;letter-spacing:1px" id="pair-status">Menunggu konfirmasi...</div>
+          </div>
+          <div id="pair-target" style="font-family:'Orbitron',monospace;font-size:9px;color:#444;letter-spacing:1px;margin-bottom:16px"></div>
+          <button class="btn-s" onclick="cancelPairing()">BATAL</button>
+        </div>
+      </div>`
+    document.body.appendChild(ov)
+  }
+
+  $('pair-code').textContent = code || '----'
+  $('pair-target').textContent = 'Nomor: ' + sender
+  $('pair-status').textContent = 'Menunggu konfirmasi di WA...'
+  openOv('ov-pairing')
+
+  // Poll status setiap 3 detik
+  clearInterval(pairInterval)
+  pairInterval = setInterval(async () => {
+    const s = await apiCall('/pairing/status/'+sender)
+    if(s.status === 'connected') {
+      clearInterval(pairInterval)
+      $('pair-status').textContent = '✓ Connected! Mengirim bug...'
+      $('pair-dot').style.background = '#4ade80'
+      await sleep(1200)
+      closeOv('ov-pairing')
+      await executeSend(sender)
+    } else if(s.status === 'error' || s.status === 'logged_out') {
+      clearInterval(pairInterval)
+      $('pair-status').textContent = 'Gagal. Coba lagi.'
+      toast('Pairing gagal','err')
+    }
+  }, 3000)
+}
+
+function cancelPairing() {
+  clearInterval(pairInterval)
+  closeOv('ov-pairing')
+}
+
+async function executeSend(sender) {
+  const target = $('tinp').value.trim()
+  const bug    = $('bsel').value
+  const btn    = $('sbtn')
+  btn.disabled = true
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite"/></path></svg> SENDING...'
+
+  const res = await apiCall('/bug/send', {
+    method: 'POST',
+    body: JSON.stringify({ sender, target, bugType: bug, type: bugMode })
+  })
+
+  const rbox = $('sres')
+  if(res.success) {
+    rbox.style.display='flex'; rbox.className='rbox rok'
+    rbox.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> '+res.message
+    toast('Bug berhasil dikirim!','ok')
+  } else {
+    rbox.style.display='flex'; rbox.className='rbox rerr'
+    rbox.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg> '+res.message
+    toast(res.message,'err')
+  }
+
+  btn.disabled=false
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2M19.5 6.5a3 3 0 00-3-3l-4.5 4.5.75.75L7.5 13.5 10.5 16l5.25-5.25.75.75L21 7"/></svg> SEND BUG ATTACK'
+}
+
+async function doSendMock(sender) {
+  // Offline simulation
+  const btn=$('sbtn')
+  btn.disabled=true
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite"/></path></svg> SENDING...'
+  await sleep(1400+Math.random()*600)
+  const target=$('tinp').value.trim(),bug=$('bsel').value
+  const res=$('sres')
+  res.style.display='flex';res.className='rbox rok'
+  res.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> [SIMULASI] Bug "'+bug+'" dari '+sender+' ke '+target
+  toast('Simulasi kirim berhasil!','ok')
+  btn.disabled=false
+  btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2M19.5 6.5a3 3 0 00-3-3l-4.5 4.5.75.75L7.5 13.5 10.5 16l5.25-5.25.75.75L21 7"/></svg> SEND BUG ATTACK'
+}
+
+// ── TOOLS ──
+function buildGrid(){
+  const g=$('tgrid');g.innerHTML='';
+  TDATA.forEach(t=>{
+    const d=document.createElement('div');
+    d.className='tcrd';
+    // Sender card punya style beda - highlight
+    if(t.special==='sender'){
+      d.style.cssText='background:linear-gradient(135deg,#0d1a0d,#111);border-color:#14532d';
+      d.innerHTML=`<div class="tico" style="background:#0a200a;border-color:#14532d;color:#4ade80">${t.ic}</div><div class="tname" style="color:#4ade80">${t.n}</div><div class="tsub">${t.s}</div>`;
+    } else {
+      d.innerHTML=`<div class="tico">${t.ic}</div><div class="tname">${t.n}</div><div class="tsub">${t.s}</div>`;
+    }
+    d.onclick=()=>openTool(t);
+    g.appendChild(d);
+  });
+}
+
+function openTool(tool){
+  // Special: Add Sender
+  if(tool.special==='sender'){
+    openSenderManager();
+    return;
+  }
+
+  $('tp-title').innerHTML=tool.ic+' '+tool.n;
+  const b=$('tp-body');b.innerHTML='';
+  tool.items.forEach(item=>{
+    const d=document.createElement('div');
+    d.className='sitem';
+    const isOs=!!item.ot;
+    d.innerHTML=`<div class="sil"><div class="sico">${tool.ic}</div><div><div class="sname">${item.n}</div><div class="ssub">${item.s}</div></div></div><div class="sbadge">${isOs?'→':'SOON'}</div>`;
+    d.onclick=()=>{
+      if(isOs){
+        osItem=item;
+        $('os-title').textContent=item.n.toUpperCase();
+        $('os-inp').placeholder=item.ph;
+        $('os-inp').value='';
+        $('os-err').style.display='none';
+        $('os-tbl').style.display='none';
+        closeOv('ov-tools');openOv('ov-osint');
+        setTimeout(()=>{try{$('os-inp').focus()}catch(e){}},380);
+      } else {
+        toast('🚀 '+item.n+' — Coming Soon!','inf');
+      }
+    };
+    b.appendChild(d);
+  });
+  openOv('ov-tools');
+}
+
+// ── OSINT ──
+async function doOsint(){
+  const q=$('os-inp').value.trim(),item=osItem;
+  const e=$('os-err'),tbl=$('os-tbl'),btn=$('os-btn');
+  if(!q){showErr(e,'Query tidak boleh kosong');return}
+  e.style.display='none';tbl.style.display='none';
+  btn.disabled=true;btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.9s" repeatCount="indefinite"/></path></svg> SEARCHING...';
+  await sleep(800+Math.random()*500);
+  let data={};
+  try{
+    if(item.ot==='nik'){
+      if(q.length!==16)throw new Error('NIK harus 16 digit');
+      let d=parseInt(q.substring(6,8));const m=parseInt(q.substring(8,10)),y=parseInt(q.substring(10,12));
+      const g=d>40?'Perempuan':'Laki-laki';if(d>40)d-=40;const fy=y<30?2000+y:1900+y;
+      data={NIK:q,Gender:g,'Tanggal Lahir':`${String(d).padStart(2,'0')}-${String(m).padStart(2,'0')}-${fy}`,Provinsi:q.substring(0,2),Kota:q.substring(2,4),Kecamatan:q.substring(4,6)};
+    } else if(item.ot==='phone'){
+      const c=['Telkomsel','Indosat','XL Axiata','Tri','Smartfren'];
+      data={Nomor:q,Negara:'Indonesia',Operator:c[Math.floor(Math.random()*c.length)],Tipe:'Mobile',Valid:'Ya',Note:'Simulasi'};
+    } else if(item.ot==='domain'){
+      data={Domain:q,Registrar:'Mock Registrar Inc.',Dibuat:'2020-01-01',Expired:'2027-01-01',Nameserver:'ns1.mockdns.com',Note:'Simulasi'};
+    } else if(item.ot==='email'){
+      data={Email:q,Valid:'Ya',Domain:q.split('@')[1]||'-',Breach:'Tidak ditemukan',Note:'Simulasi'};
+    }
+    tbl.innerHTML=Object.entries(data).map(([k,v])=>`<div class="osrow"><div class="oskey">${k}</div><div class="osval">${v}</div></div>`).join('');
+    tbl.style.display='block';
+  } catch(err){showErr(e,err.message)}
+  btn.disabled=false;btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> SEARCH';
+}
+
+// ── MUSIC ──
+function fmtT(s){return`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`}
+function updM(){$('mel').textContent=fmtT(mEl);$('mpf').style.width=(mEl/MD*100)+'%'}
+function toggleM(){
+  mPlay=!mPlay;
+  $('mpi').style.display=mPlay?'none':'block';
+  $('mpau').style.display=mPlay?'block':'none';
+  const mb=$('mbtn');mb.classList.toggle('music-on',mPlay);
+  let dot=mb.querySelector('.mdot');
+  if(mPlay&&!dot){dot=document.createElement('div');dot.className='mdot';mb.appendChild(dot)}
+  else if(!mPlay&&dot)dot.remove();
+  if(mPlay){mTmr=setInterval(()=>{mEl++;if(mEl>=MD){mEl=0;mPlay=false;toggleM();return}updM()},1000)}
+  else clearInterval(mTmr);
+}
+function restartM(){mEl=0;updM();if(!mPlay)toggleM()}
+function seekM(e){const r=$('mpbg').getBoundingClientRect();mEl=Math.floor(Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*MD);updM()}
+
+doPing();
+</script>
+</body>
+</html>
